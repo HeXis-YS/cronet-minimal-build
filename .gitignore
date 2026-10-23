@@ -1,0 +1,22 @@
+# Build artifacts
+chromium/
+out/
+dist/
+*.so
+*.a
+*.dylib
+*.dll
+
+# depot_tools
+depot_tools/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

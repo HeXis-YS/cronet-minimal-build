@@ -1,0 +1,43 @@
+# Copyright 2023 The Chromium Authors
+# Minimal Cronet subset for XHTTP
+
+component("cronet_minimal") {
+  sources = [
+    "src/buffer.cc",
+    "src/engine.cc",
+    "src/engine.h",
+    "src/io_buffer_with_cronet_buffer.cc",
+    "src/io_buffer_with_cronet_buffer.h",
+    "src/native_metrics_util.cc",
+    "src/native_metrics_util.h",
+    "src/runnables.cc",
+    "src/runnables.h",
+    "src/upload_data_sink.cc",
+    "src/upload_data_sink.h",
+    "src/url_request.cc",
+    "src/url_request.h",
+    
+    "generated/cronet.idl_c.h",
+    "generated/cronet.idl_impl_interface.cc",
+    "generated/cronet.idl_impl_interface.h",
+    "generated/cronet.idl_impl_struct.cc",
+    "generated/cronet.idl_impl_struct.h",
+    
+    "include/cronet_c.h",
+    "include/cronet_export.h",
+  ]
+
+  deps = [
+    "//base",
+    "//components/cronet:cronet_common",
+    "//net",
+  ]
+
+  public_deps = [
+    "//net",
+  ]
+
+  defines = [ "CRONET_IMPLEMENTATION" ]
+
+  configs += [ "//build/config/compiler:wexit_time_destructors" ]
+}

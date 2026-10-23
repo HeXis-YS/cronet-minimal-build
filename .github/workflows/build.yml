@@ -1,0 +1,100 @@
+name: Build Cronet Minimal
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CHROMIUM_VERSION: "154.0.8037.49"
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3 python3-pip git curl \
+            build-essential ninja-build \
+            pkg-config libglib2.0-dev \
+            lsb-release sudo wget
+      
+      - name: Setup depot_tools
+        run: |
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          echo "$PWD/depot_tools" >> $GITHUB_PATH
+      
+      - name: Fetch Chromium ${{ env.CHROMIUM_VERSION }}
+        run: |
+          mkdir -p chromium
+          cd chromium
+          fetch --nohooks chromium
+          cd src
+          git checkout ${{ env.CHROMIUM_VERSION }}
+          gclient sync -D --force --reset
+      
+      - name: Install build dependencies
+        run: |
+          cd chromium/src
+          build/install-build-deps.sh --no-prompt
+      
+      - name: Copy Cronet Minimal sources
+        run: |
+          mkdir -p chromium/src/components/cronet/native_minimal
+          cp -r src/* chromium/src/components/cronet/native_minimal/
+          cp BUILD.gn chromium/src/components/cronet/native_minimal/
+      
+      - name: Configure build
+        run: |
+          cd chromium/src
+          gn gen out/Release --args='
+            is_official_build=true
+            is_debug=false
+            symbol_level=0
+            is_component_build=false
+            use_sysroot=true
+            target_cpu="${{ matrix.arch }}"
+            use_custom_libcxx=true
+            enable_nacl=false
+            enable_remoting=false
+          '
+      
+      - name: Build Cronet Minimal
+        run: |
+          cd chromium/src
+          ninja -C out/Release components/cronet/native_minimal:cronet_minimal
+      
+      - name: Package artifacts
+        run: |
+          mkdir -p dist
+          cd chromium/src/out/Release
+          cp libcronet_minimal.so $GITHUB_WORKSPACE/dist/
+          cp -r ../../components/cronet/native_minimal/include $GITHUB_WORKSPACE/dist/
+          cd $GITHUB_WORKSPACE/dist
+          tar -czf cronet-minimal-linux-${{ matrix.arch }}.tar.gz *
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cronet-minimal-linux-${{ matrix.arch }}
+          path: dist/cronet-minimal-linux-${{ matrix.arch }}.tar.gz
+      
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/cronet-minimal-linux-${{ matrix.arch }}.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
