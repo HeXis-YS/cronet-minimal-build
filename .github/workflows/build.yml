@@ -51,7 +51,7 @@ jobs:
           ]
           '
           git clone -b ${{ env.CHROMIUM_VERSION }} --depth=1 --no-tags --single-branch https://github.com/chromium/chromium.git src
-          gclient sync -n -p --no-history --shallow
+          gclient sync -p --no-history --shallow
       
       - name: Install build dependencies
         run: |
