@@ -26,7 +26,7 @@ git push -u origin main
 
 - 访问 `https://github.com/YOUR_USERNAME/cronet-minimal-build/actions`
 - 查看 "Build Cronet Minimal" workflow
-- 等待 4-6 小时（首次构建）
+- 等待 3-4 小时（首次构建）
 
 ### 4. 下载构建产物
 
