@@ -59,10 +59,10 @@ jobs:
       - name: Copy Cronet Minimal sources
         run: |
           mkdir -p src/components/cronet/native_minimal
-          cp -r src/* src/components/cronet/native_minimal/ 2>/dev/null || true
-          cp -r include/* src/components/cronet/native_minimal/include/ 2>/dev/null || true
-          cp -r generated/* src/components/cronet/native_minimal/generated/ 2>/dev/null || true
-          cp BUILD.gn src/components/cronet/native_minimal/
+          cp -r $GITHUB_WORKSPACE/src/* src/components/cronet/native_minimal/
+          cp -r $GITHUB_WORKSPACE/include src/components/cronet/native_minimal/
+          cp -r $GITHUB_WORKSPACE/generated src/components/cronet/native_minimal/
+          cp $GITHUB_WORKSPACE/BUILD.gn src/components/cronet/native_minimal/
       
       - name: Configure build
         run: |
