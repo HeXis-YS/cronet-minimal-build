@@ -36,29 +36,37 @@ jobs:
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           echo "$PWD/depot_tools" >> $GITHUB_PATH
       
-      - name: Fetch Chromium ${{ env.CHROMIUM_VERSION }}
+      - name: Fetch Chromium ${{ env.CHROMIUM_VERSION }} (shallow)
         run: |
-          mkdir -p chromium
-          cd chromium
-          fetch --nohooks chromium
-          cd src
-          git checkout ${{ env.CHROMIUM_VERSION }}
-          gclient sync -D --force --reset
+          gclient root
+          gclient config --spec 'solutions = [
+            {
+              "name": "src",
+              "url": "https://github.com/chromium/chromium.git",
+              "custom_deps": {},
+              "custom_vars": {},
+            },
+          ]
+          '
+          git clone -b ${{ env.CHROMIUM_VERSION }} --depth=1 --no-tags --single-branch https://github.com/chromium/chromium.git src
+          gclient sync -n -p --no-history --shallow
       
       - name: Install build dependencies
         run: |
-          cd chromium/src
+          cd src
           build/install-build-deps.sh --no-prompt
       
       - name: Copy Cronet Minimal sources
         run: |
-          mkdir -p chromium/src/components/cronet/native_minimal
-          cp -r src/* chromium/src/components/cronet/native_minimal/
-          cp BUILD.gn chromium/src/components/cronet/native_minimal/
+          mkdir -p src/components/cronet/native_minimal
+          cp -r src/* src/components/cronet/native_minimal/ 2>/dev/null || true
+          cp -r include/* src/components/cronet/native_minimal/include/ 2>/dev/null || true
+          cp -r generated/* src/components/cronet/native_minimal/generated/ 2>/dev/null || true
+          cp BUILD.gn src/components/cronet/native_minimal/
       
       - name: Configure build
         run: |
-          cd chromium/src
+          cd src
           gn gen out/Release --args='
             is_official_build=true
             is_debug=false
@@ -73,16 +81,17 @@ jobs:
       
       - name: Build Cronet Minimal
         run: |
-          cd chromium/src
+          cd src
           ninja -C out/Release components/cronet/native_minimal:cronet_minimal
       
       - name: Package artifacts
         run: |
           mkdir -p dist
-          cd chromium/src/out/Release
+          cd src/out/Release
           cp libcronet_minimal.so $GITHUB_WORKSPACE/dist/
-          cp -r ../../components/cronet/native_minimal/include $GITHUB_WORKSPACE/dist/
-          cd $GITHUB_WORKSPACE/dist
+          cd $GITHUB_WORKSPACE
+          cp -r include dist/
+          cd dist
           tar -czf cronet-minimal-linux-${{ matrix.arch }}.tar.gz *
       
       - name: Upload artifacts
